@@ -1,4 +1,4 @@
-from Base import Base
+from models.Base import Base
 
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -7,5 +7,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 class Region(Base):
     __tablename__ = 'regions'
 
-    name: Mapped[str] = mapped_column(primary_key=True)
-    cities = relationship('City', back_populates='region')
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    name: Mapped[str]
+    cities = relationship('City', back_populates='region', cascade='all, delete')

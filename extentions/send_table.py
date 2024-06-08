@@ -11,7 +11,7 @@ async def send_table(ctx: commands.Context):
     message = await ctx.send(
         get_table(),
         view=discord.ui.View(
-            discord.Button(
+            discord.ui.Button(
                 label='+ Внести данные',
                 style=discord.ButtonStyle.primary,
                 custom_id='add_data'
@@ -19,12 +19,12 @@ async def send_table(ctx: commands.Context):
         )
     )
 
-    parameter = db.query(Parameter).filter(Parameter.name == 'message_id').first()
-    if parameter:
-        parameter.value = message.id
+    message_parameter = db.query(Parameter).filter(Parameter.name == 'message_id').first()
+    channel_parameter = db.query(Parameter).filter(Parameter.name == 'channel_id').first()
+    message_parameter.value = message.id
+    channel_parameter.value = message.channel.id
 
-    else:
-        db.add(Parameter())
+    db.commit()
 
 
 def setup(bot: commands.Bot):
