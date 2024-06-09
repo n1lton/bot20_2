@@ -6,7 +6,7 @@ from database import db
 
 
 @commands.has_permissions(administrator=True)
-@commands.command('создать-кнопку')
+@commands.command('создать-таблицу')
 async def send_table(ctx: commands.Context):
     message = await ctx.send(
         view=discord.ui.View(

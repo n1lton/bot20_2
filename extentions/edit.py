@@ -9,6 +9,7 @@ from models.City import City
 from models.Storage import Storage
 
 
+@commands.has_permissions(administrator=True)
 @commands.slash_command(name='изменить', description='Изменить параметры региона, города или склада')
 @discord.option('регион', str, required=True, autocomplete=get_regions,
     description='Имя региона', parameter_name='region_id')

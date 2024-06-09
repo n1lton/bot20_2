@@ -54,11 +54,11 @@ def get_storage_text(storage: Storage):
 
 
 def get_city_text(city):
-    return f'## {city.name}\n'
+    return f'**{city.name}**\n'
 
 
 def get_region_text(region):
-    return f'# {region.name}'
+    return f'`{region.name.ljust(50, " ")}`'
 
 
 def get_table():
@@ -66,7 +66,7 @@ def get_table():
 
     if not regions:
         return []
-    
+    regions = sorted(regions, key=lambda a: a.name.lower()[0])
     table = []
     for region in regions:
         table.append((get_region_text(region), None, region))
@@ -75,7 +75,7 @@ def get_table():
                 get_city_text(city),
                 discord.ui.View(
                     discord.ui.Button(
-                        label='✅',
+                        label='♋',
                         style=discord.ButtonStyle.gray,
                         custom_id='update_city'
                     )
@@ -86,7 +86,7 @@ def get_table():
             for storage in city.storages:
                 view = discord.ui.View(
                     discord.ui.Button(
-                        label='✅',
+                        label='♋',
                         style=discord.ButtonStyle.blurple,
                         custom_id='update_storage'
                     )
