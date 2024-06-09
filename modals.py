@@ -1,5 +1,6 @@
 import discord, time, config
-from assets import update_message
+from assets import update_table, delete_city, delete_region, delete_storage, get_channel
+from assets import get_region_text, get_city_text, get_storage_text
 from models.City import City
 from models.Storage import Storage
 from models.Region import Region
@@ -13,11 +14,12 @@ class AddData(discord.ui.Modal):
 
         self.add_item(discord.ui.InputText(label='Регион'))
         self.add_item(discord.ui.InputText(label='Город'))
-        self.add_item(discord.ui.InputText(label='Название'))
+        self.add_item(discord.ui.InputText(label='Склад'))
         self.add_item(discord.ui.InputText(label='Пароль'))
 
 
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         city_or_region_is_new = False
 
         region = db.query(Region).filter(Region.name == self.children[0].value).first()
@@ -59,10 +61,7 @@ class AddData(discord.ui.Modal):
         )
 
         db.add(storage)
-        db.commit()
-
-        await interaction.response.defer()
-        await update_message()
+        await update_table()
 
 
 
@@ -77,33 +76,27 @@ class EditStorage(discord.ui.Modal):
 
 
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         storage = db.query(Storage).filter(Storage.id == self.storage_id).first()
         name = self.children[0].value
         password = self.children[1].value
         delete = self.children[2].value
 
         if delete == '1' and interaction.user.guild_permissions.administrator:
-            city = storage.city
-            region = city.region
-
-            db.delete(storage)
-
-            if len(city.storages) == 0:
-                db.delete(city)
-
-                if len(region.cities) == 0:
-                    db.delete(region)
+            await delete_storage(storage)
+            return
         
-        else:
-            if name != '':
-                storage.name = name
+        if name != '':
+            storage.name = name
 
-            if password != '':
-                storage.password = password
+        if password != '':
+            storage.password = password
 
         db.commit()
-        await interaction.response.defer()
-        await update_message()
+
+        channel = get_channel()
+        message = await channel.fetch_message(storage.message_id)
+        await message.edit(content=get_storage_text(storage))
             
 
 class EditCity(discord.ui.Modal):
@@ -116,33 +109,24 @@ class EditCity(discord.ui.Modal):
 
 
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         city = db.query(City).filter(City.id == self.city_id).first()
         name = self.children[0].value
         delete = self.children[1].value
 
         if delete == '1' and interaction.user.guild_permissions.administrator:
-            region = city.region
-
-            db.delete(city)
-
-            if len(region.cities) == 0:
-                db.delete(region)
+            await delete_city(city)
+            return
         
-        else:
-            if name != '':
-                doubles = db.query(City).filter(
-                    and_(City.name == name, City.region_id == city.region_id)
-                ).all()
-
-                if doubles:
-                    await interaction.respond('❌ Такой город уже есть', ephemeral=True)
-                    return
-                
-                city.name = name
+        if name != '':
+            city.name = name
 
         db.commit()
-        await interaction.response.defer()
-        await update_message()
+
+        channel = get_channel()
+        message = await channel.fetch_message(city.message_id)
+        await message.edit(content=get_city_text(city))
+            
 
 
 class EditRegion(discord.ui.Modal):
@@ -154,24 +138,20 @@ class EditRegion(discord.ui.Modal):
 
 
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         region = db.query(Region).filter(Region.id == self.region_id).first()
         name = self.children[0].value
         delete = self.children[1].value
 
         if delete == '1' and interaction.user.guild_permissions.administrator:
-            db.delete(region)
+            await delete_region(region)
+            return
         
-        else:
-            if name != '':
-                doubles = db.query(Region).filter(Region.name == name).all()
-
-                if doubles:
-                    await interaction.respond('❌ Такой регион уже есть', ephemeral=True)
-                    return
-                
-                region.name = name
+        if name != '':
+            region.name = name
 
         db.commit()
-        await interaction.response.defer()
-        await update_message()
-            
+
+        channel = get_channel()
+        message = await channel.fetch_message(region.message_id)
+        await message.edit(content=get_region_text(region))

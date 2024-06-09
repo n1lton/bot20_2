@@ -6,23 +6,24 @@ from database import db
 
 
 @commands.has_permissions(administrator=True)
-@commands.command('создать-таблицу')
+@commands.command('создать-кнопку')
 async def send_table(ctx: commands.Context):
     message = await ctx.send(
-        get_table(),
         view=discord.ui.View(
             discord.ui.Button(
-                label='+ Внести данные',
+                label='+ Добавить',
                 style=discord.ButtonStyle.primary,
                 custom_id='add_data'
             )
         )
     )
 
-    message_parameter = db.query(Parameter).filter(Parameter.name == 'message_id').first()
     channel_parameter = db.query(Parameter).filter(Parameter.name == 'channel_id').first()
-    message_parameter.value = message.id
-    channel_parameter.value = message.channel.id
+    if channel_parameter:
+        channel_parameter.value = message.channel.id
+
+    else:
+        db.add(Parameter(name='channel_id', value=message.channel.id))
 
     db.commit()
 

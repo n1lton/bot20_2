@@ -12,5 +12,7 @@ class Storage(Base):
     name: Mapped[str]
     password: Mapped[str]
     expires: Mapped[int]
+    message_id: Mapped[int | None]
+    
     city_id: Mapped[str] = mapped_column(ForeignKey('cities.id', ondelete='CASCADE'))
     city = relationship('City', back_populates='storages')

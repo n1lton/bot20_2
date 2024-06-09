@@ -14,4 +14,5 @@ class City(Base):
     region_id: Mapped[str] = mapped_column(
         ForeignKey('regions.id', ondelete='CASCADE')
     )
+    message_id: Mapped[int | None]
     region = relationship('Region', back_populates='cities')
