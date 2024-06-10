@@ -96,10 +96,11 @@ def get_table():
     return table
 
 
-async def clear_channel(channel: discord.TextChannel):
+async def clear_channel():
     # разбиение на порции по 100 сообщений
     portions = []
     portion = []
+    channel = get_channel()
     async for message in channel.history(limit=None):
         message: discord.Message
         # удаление слишком старых сообщений (delete_messages не может)
@@ -126,12 +127,11 @@ async def update_table():
 
     cache.clear()
 
-    channel = get_channel()
-
     # очистка сообщений
-    await clear_channel(channel)
+    await clear_channel()
     
     # отправка
+    channel = get_channel()
     for component in get_table():
         message = await channel.send(
             component[0],
