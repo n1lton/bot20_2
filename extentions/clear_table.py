@@ -1,4 +1,4 @@
-import discord
+import discord, config
 from discord.ext import commands
 from assets import clear_channel, get_channel
 from database import db
@@ -6,7 +6,7 @@ from models.Region import Region
 from cache import cache
 
 
-@commands.has_permissions(administrator=True)
+@commands.has_role(config.CAN_USE_BOT_ROLE_ID)
 @commands.slash_command(name='очистить', description='Очищает таблицу со складами')
 async def clear_table(ctx: discord.ApplicationContext):
     await ctx.respond('Таблица очищена', ephemeral=True)

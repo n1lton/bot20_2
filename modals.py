@@ -119,6 +119,20 @@ class EditCity(discord.ui.Modal):
             return
         
         if name != '':
+            same_name_city = db.query(City).filter(
+                and_(City.region == city.region, City.name == name)
+            ).first()
+            
+            if same_name_city:
+                db.query(Storage).filter(
+                    Storage.city_id == same_name_city.id
+                ).update({'city_id': same_name_city.id})
+
+                db.query(City).filter(City.id == city.id).delete()
+                await update_table()
+                db.commit()
+                return
+
             city.name = name
 
         db.commit()
@@ -148,7 +162,20 @@ class EditRegion(discord.ui.Modal):
             return
         
         if name != '':
+            same_name_region = db.query(Region).filter(Region.name == name).first()
+
+            if same_name_region:
+                db.query(City).filter(
+                    City.region_id == same_name_region.id
+                ).update({'region_id': same_name_region.id})
+                
+                db.query(Region).filter(Region.id == region.id).delete()
+                await update_table()
+                db.commit()
+                return
+
             region.name = name
+            
 
         db.commit()
 
