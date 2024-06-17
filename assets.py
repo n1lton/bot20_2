@@ -3,6 +3,8 @@ from database import db
 from models.Region import Region
 from models.Storage import Storage
 from models.Parameter import Parameter
+from models.City import City
+from sqlalchemy import and_
 from cache import cache
 from bot import bot
 
@@ -208,3 +210,22 @@ async def delete_storage(storage: Region):
 def get_channel():
     channel_id = db.query(Parameter).filter(Parameter.name == 'channel_id').first().value
     return bot.get_channel(channel_id)
+
+
+def check_same_name_city(city, region, name):
+    same_name_city = db.query(City).filter(
+        and_(City.region == region, City.name == name)
+    ).first()
+    
+    if same_name_city:
+        db.query(Storage).filter(
+            Storage.city_id == city.id
+        ).update({'city_id': same_name_city.id})
+
+        db.delete(city)
+
+        # статус - 1 если есть город с таким же именем в регионе
+        # 0 если такого города нет
+        return 1
+
+    return 0

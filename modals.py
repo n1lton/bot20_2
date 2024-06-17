@@ -1,6 +1,6 @@
 import discord, time, config
 from assets import update_table, delete_city, delete_region, delete_storage, get_channel
-from assets import get_region_text, get_city_text, get_storage_text
+from assets import get_region_text, get_city_text, get_storage_text, check_same_name_city
 from models.City import City
 from models.Storage import Storage
 from models.Region import Region
@@ -82,7 +82,7 @@ class EditStorage(discord.ui.Modal):
         password = self.children[1].value
         delete = self.children[2].value
 
-        if delete == '1' and interaction.user.guild_permissions.administrator:
+        if delete == '1':
             await delete_storage(storage)
             return
         
@@ -114,33 +114,30 @@ class EditCity(discord.ui.Modal):
         name = self.children[0].value
         delete = self.children[1].value
 
-        if delete == '1' and interaction.user.guild_permissions.administrator:
+        if delete == '1':
             await delete_city(city)
             return
         
-        if name != '':
-            same_name_city = db.query(City).filter(
-                and_(City.region == city.region, City.name == name)
-            ).first()
-            
-            if same_name_city:
-                db.query(Storage).filter(
-                    Storage.city_id == same_name_city.id
-                ).update({'city_id': same_name_city.id})
+        if name == '':
+            return
+        
+        status = check_same_name_city(city, city.region, name)
 
-                db.query(City).filter(City.id == city.id).delete()
-                await update_table()
-                db.commit()
-                return
-
+        # если имя склада было изменено на имя уже существующего
+        # то таблица полностью обновится т.к. склады редактируемого города перейдут в другой
+        # иначе просто изменится имя склада
+        if status == 1:
+            await update_table()
+            db.commit()
+        
+        else:
             city.name = name
 
-        db.commit()
-
-        channel = get_channel()
-        message = await channel.fetch_message(city.message_id)
-        await message.edit(content=get_city_text(city))
-            
+            channel = get_channel()
+            message = await channel.fetch_message(city.message_id)
+            await message.edit(content=get_city_text(city))
+            db.commit()
+                    
 
 
 class EditRegion(discord.ui.Modal):
@@ -157,28 +154,28 @@ class EditRegion(discord.ui.Modal):
         name = self.children[0].value
         delete = self.children[1].value
 
-        if delete == '1' and interaction.user.guild_permissions.administrator:
+        if delete == '1':
             await delete_region(region)
             return
         
-        if name != '':
-            same_name_region = db.query(Region).filter(Region.name == name).first()
+        if name == '':
+            return
+        
+        same_name_region = db.query(Region).filter(Region.name == name).first()
 
-            if same_name_region:
-                db.query(City).filter(
-                    City.region_id == same_name_region.id
-                ).update({'region_id': same_name_region.id})
-                
-                db.query(Region).filter(Region.id == region.id).delete()
-                await update_table()
-                db.commit()
-                return
+        if same_name_region:
+            for city in region.cities:
+                status = check_same_name_city(city, same_name_region, city.name)
+                if status == 0:
+                    city.region = same_name_region
 
+            db.delete(region)
+            await update_table()
+        else:
             region.name = name
-            
+
+            channel = get_channel()
+            message = await channel.fetch_message(region.message_id)
+            await message.edit(content=get_region_text(region))
 
         db.commit()
-
-        channel = get_channel()
-        message = await channel.fetch_message(region.message_id)
-        await message.edit(content=get_region_text(region))
